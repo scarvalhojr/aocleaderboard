@@ -5,8 +5,6 @@ use reqwest::header::{HeaderMap, HeaderValue, COOKIE};
 const FIRST_EVENT_YEAR: i32 = 2015;
 const EVENT_START_MONTH: u32 = 12;
 const RELEASE_TIMEZONE_OFFSET: i32 = -5 * 3600;
-const SESSION_COOKIE: &str = "session=53616c7465645f5fac1be7a37b30d67982448ad247a86c8d3bedc4360fbcf8de50a305f6b5e32752aa51b838ed678860";
-const LEADERBOARD_ID: u32 = 372543;
 
 pub fn latest_event_year() -> i32 {
     let now = FixedOffset::east(RELEASE_TIMEZONE_OFFSET)
@@ -22,14 +20,36 @@ pub fn is_valid_event_year(year: i32) -> bool {
     year >= FIRST_EVENT_YEAR && year <= latest_event_year()
 }
 
-pub fn fetch_leaderboard(year: i32) -> reqwest::Result<String> {
+pub fn fetch_leaderboards(
+    year: i32,
+    leaderboard_ids: &[String],
+    session_cookie: &str,
+) -> reqwest::Result<String> {
+    // if !is_valid_event_year(year) {
+    //     return Err(...)
+    // }
+    for board_id in leaderboard_ids {
+        // TODO: parse and merge JSON results
+        fetch_leaderboard(year, board_id, session_cookie)?;
+    }
+    Ok("TODO".to_string())
+}
+
+fn fetch_leaderboard(
+    year: i32,
+    leaderboard_id: &str,
+    session_cookie: &str,
+) -> reqwest::Result<String> {
     let mut headers = HeaderMap::new();
-    headers.insert(COOKIE, HeaderValue::from_static(SESSION_COOKIE));
+    // TODO: handle invalid characters in session cookie
+    headers.insert(COOKIE, HeaderValue::from_str(session_cookie).unwrap());
 
     let client = Client::builder().default_headers(headers).build()?;
     let url = format!(
         "https://adventofcode.com/{}/leaderboard/private/view/{}.json",
-        year, LEADERBOARD_ID
+        year, leaderboard_id
     );
+
+    info!("Fetching {}", url);
     client.get(&url).send()?.text()
 }

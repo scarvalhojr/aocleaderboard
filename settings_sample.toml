@@ -1,0 +1,8 @@
+# IDs of all Advent of Code leaderboards to be merged
+leaderboard_ids = [12345, 23456]
+
+# Session cookie for adventofcode.com (with access to all leaderboards)
+session_cookie = "session=xxxx..."
+
+# Optionally change how often to fetch leaderboards data from adventofcode.com
+# leaderboard_update_sec = 300

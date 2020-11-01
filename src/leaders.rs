@@ -1,57 +1,83 @@
-use crate::aoc::{fetch_leaderboard, is_valid_event_year};
+use crate::aoc::fetch_leaderboards;
 use std::cmp::Ordering;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
 
-const LEADERBOARD_UPDATE_SEC: u64 = 10 * 60;
-
 pub type EventYear = i32;
 
-pub struct Events {
+#[derive(Debug)]
+pub enum EventError {
+    NotFound,
+    HttpError(String),
+}
+
+pub struct EventManager {
+    leaderboard_ids: Vec<String>,
+    session_cookie: String,
+    update_sec: u64,
     events: HashMap<EventYear, Event>,
 }
 
-impl Events {
-    pub fn new() -> Self {
+impl EventManager {
+    pub fn new(
+        leaderboard_ids: Vec<String>,
+        session_cookie: String,
+        update_sec: u64,
+    ) -> Self {
         Self {
+            leaderboard_ids,
+            session_cookie,
+            update_sec,
             events: HashMap::new(),
         }
     }
 
     fn get_event(&self, year: EventYear) -> Option<&Event> {
-        self.events.get(&year)
+        self.events.get(&year).filter(|&event| {
+            event.last_updated.elapsed().as_secs() < self.update_sec
+        })
     }
 
-    fn update_event(&mut self, year: EventYear) -> Option<&Event> {
-        if let Some(event) = Event::fetch_and_build(year) {
-            self.events.insert(year, event);
-            self.events.get(&year)
-        } else {
-            None
+    fn update_event(&mut self, year: EventYear) -> Result<(), EventError> {
+        debug!("Starting update_event for {} event", year);
+        if self.get_event(year).is_some() {
+            debug!("{} event is already up to date", year);
+            return Ok(())
         }
+
+        // TODO: handle errors
+        let _json = fetch_leaderboards(
+            year,
+            &self.leaderboard_ids,
+            &self.session_cookie,
+        )
+        .map_err(|err| EventError::HttpError(err.to_string()))?;
+
+        debug!("Building new event object for {}", year);
+        let last_updated = Instant::now();
+
+        // Build members
+        let members = Vec::new();
+
+        let event = Event::new(last_updated, members);
+        self.events.insert(year, event);
+        debug!("Stored new event object for {}", year);
+        Ok(())
     }
 }
 
 struct Event {
     last_updated: Instant,
-    members: BinaryHeap<Member>,
+    members: Vec<Member>,
 }
 
 impl Event {
-    fn fetch_and_build(year: EventYear) -> Option<Self> {
-        if !is_valid_event_year(year) {
-            None
-        } else {
-            Some(Self {
-                last_updated: Instant::now(),
-                members: BinaryHeap::new(),
-            })
+    fn new(last_updated: Instant, members: Vec<Member>) -> Self {
+        Self {
+            last_updated,
+            members,
         }
-    }
-
-    fn is_up_to_date(&self) -> bool {
-        self.last_updated.elapsed().as_secs() < LEADERBOARD_UPDATE_SEC
     }
 }
 
@@ -81,22 +107,20 @@ impl PartialEq for Member {
 }
 
 pub fn get_leaders(
-    events: Arc<RwLock<Events>>,
+    event_mgr: Arc<RwLock<EventManager>>,
     year: EventYear,
     _timestamp: Option<i64>,
-) -> BinaryHeap<Member> {
-    // TODO: handle LockResult errors
-    if let Some(event) = events.read().unwrap().get_event(year) {
-        if event.is_up_to_date() {
-            return event.members.clone();
+) -> Result<Vec<Member>, EventError> {
+    loop {
+        // TODO: handle LockResult errors
+        debug!("Attempting to read {} event", year);
+        if let Some(event) = event_mgr.read().unwrap().get_event(year) {
+            debug!("Returning members of {} event", year);
+            return Ok(event.members.clone());
         }
-    }
 
-    // TODO: handle LockResult errors
-    if let Some(event) = events.write().unwrap().update_event(year) {
-        event.members.clone()
-    } else {
-        BinaryHeap::new()
+        // TODO: handle LockResult errors
+        debug!("Attempting to update {} event", year);
+        event_mgr.write().unwrap().update_event(year)?;
     }
 }
-
