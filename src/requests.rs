@@ -1,5 +1,5 @@
 use crate::aoc::{is_valid_event_year, latest_event_year};
-use crate::leaders::{get_leaders, EventManager, EventYear};
+use crate::leaders::{get_event, EventManager, EventYear};
 use chrono::{DateTime, FixedOffset};
 use rocket::{http::RawStr, request::FromFormValue, State};
 use std::sync::{Arc, RwLock};
@@ -49,10 +49,21 @@ fn render_leaderboard(
     year: EventYear,
     as_of: Option<AsOf>,
 ) -> String {
-    let leaders = get_leaders(event_mgr, year, as_of.map(|a| a.timesamp()));
-    if let Some(AsOf(datetime)) = as_of {
-        format!("Year {}, as of {}:\n{:?}", year, datetime, leaders)
-    } else {
-        format!("Year {}, as of now:\n{:?}", year, leaders)
+    // TODO: use timestamp
+    let _timestamp = as_of.map(|a| a.timesamp());
+
+    match get_event(event_mgr, year) {
+        Ok(event) => {
+            let _scores = event.get_scores();
+            if let Some(AsOf(datetime)) = as_of {
+                format!("Year {}, as of {}:\n{:?}", year, datetime, event)
+            } else {
+                format!("Year {}, as of now:\n{:?}", year, event)
+            }
+        }
+        Err(err) => {
+            debug!("Failed to fetch leaders: {}", err);
+            format!("Something went wrong:\n{:?}", err)
+        }
     }
 }

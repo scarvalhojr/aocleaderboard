@@ -1,16 +1,11 @@
-use crate::aoc::fetch_leaderboards;
-use std::cmp::Ordering;
-use std::collections::HashMap;
+use crate::aoc::*;
+use std::collections::{HashMap, HashSet};
+use std::error::Error;
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
 
 pub type EventYear = i32;
-
-#[derive(Debug)]
-pub enum EventError {
-    NotFound,
-    HttpError(String),
-}
+pub type Score = i32;
 
 pub struct EventManager {
     leaderboard_ids: Vec<String>,
@@ -39,84 +34,60 @@ impl EventManager {
         })
     }
 
-    fn update_event(&mut self, year: EventYear) -> Result<(), EventError> {
+    fn update_event(&mut self, year: EventYear) -> Result<(), Box<dyn Error>> {
         debug!("Starting update_event for {} event", year);
         if self.get_event(year).is_some() {
             debug!("{} event is already up to date", year);
-            return Ok(())
+            return Ok(());
         }
 
-        // TODO: handle errors
-        let _json = fetch_leaderboards(
-            year,
-            &self.leaderboard_ids,
-            &self.session_cookie,
-        )
-        .map_err(|err| EventError::HttpError(err.to_string()))?;
+        let members =
+            fetch_members(year, &self.leaderboard_ids, &self.session_cookie)?;
 
         debug!("Building new event object for {}", year);
-        let last_updated = Instant::now();
-
-        // Build members
-        let members = Vec::new();
-
-        let event = Event::new(last_updated, members);
-        self.events.insert(year, event);
-        debug!("Stored new event object for {}", year);
+        self.events.insert(year, Event::new(members));
         Ok(())
     }
 }
 
-struct Event {
+#[derive(Clone, Debug)]
+pub struct Event {
     last_updated: Instant,
-    members: Vec<Member>,
+    members: HashSet<Member>,
 }
 
 impl Event {
-    fn new(last_updated: Instant, members: Vec<Member>) -> Self {
+    fn new(members: HashSet<Member>) -> Self {
         Self {
-            last_updated,
+            last_updated: Instant::now(),
             members,
         }
     }
-}
 
-#[derive(Clone, Debug, Eq)]
-pub struct Member {
-    id: u32,
-    name: String,
-    score: u32,
-}
-
-impl Ord for Member {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.score.cmp(&other.score).then(self.id.cmp(&other.id))
+    pub fn get_scores(&self) -> HashMap<MemberId, Score> {
+        let _ts: HashMap<
+            (PuzzleDay, PuzzlePart),
+            HashMap<Timestamp, HashSet<MemberId>>,
+        > = HashMap::new();
+        for member in &self.members {
+            for _puzzle in member.completed_puzzles() {
+                // TODO
+            }
+        }
+        HashMap::new()
     }
 }
 
-impl PartialOrd for Member {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl PartialEq for Member {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
-}
-
-pub fn get_leaders(
+pub fn get_event(
     event_mgr: Arc<RwLock<EventManager>>,
     year: EventYear,
-    _timestamp: Option<i64>,
-) -> Result<Vec<Member>, EventError> {
+) -> Result<Event, Box<dyn Error>> {
     loop {
         // TODO: handle LockResult errors
         debug!("Attempting to read {} event", year);
         if let Some(event) = event_mgr.read().unwrap().get_event(year) {
             debug!("Returning members of {} event", year);
-            return Ok(event.members.clone());
+            return Ok(event.clone());
         }
 
         // TODO: handle LockResult errors

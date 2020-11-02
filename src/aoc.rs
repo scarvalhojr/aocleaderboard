@@ -1,6 +1,12 @@
 use chrono::{Datelike, FixedOffset, TimeZone, Utc};
-use reqwest::blocking::Client;
 use reqwest::header::{HeaderMap, HeaderValue, COOKIE};
+use reqwest::Client;
+use serde_json::Value;
+use std::collections::{hash_map::Iter, HashMap, HashSet};
+use std::convert::TryFrom;
+use std::error::Error;
+use std::fmt::{self, Display, Formatter};
+use std::hash::{Hash, Hasher};
 
 const FIRST_EVENT_YEAR: i32 = 2015;
 const EVENT_START_MONTH: u32 = 12;
@@ -20,30 +26,105 @@ pub fn is_valid_event_year(year: i32) -> bool {
     year >= FIRST_EVENT_YEAR && year <= latest_event_year()
 }
 
-pub fn fetch_leaderboards(
+pub type MemberId = i32;
+pub type PuzzleDay = u8;
+pub type PuzzlePart = u8;
+pub type Timestamp = i64;
+
+#[derive(Clone, Eq, Debug)]
+pub struct Member {
+    id: MemberId,
+    name: Option<String>,
+    completed: HashMap<(PuzzleDay, PuzzlePart), Timestamp>,
+}
+
+impl Member {
+    fn new(id: MemberId, name: Option<String>) -> Self {
+        Self {
+            id,
+            name,
+            completed: HashMap::new(),
+        }
+    }
+
+    fn add_star(
+        &mut self,
+        day: PuzzleDay,
+        part: PuzzlePart,
+        timestamp: Timestamp,
+    ) {
+        self.completed.insert((day, part), timestamp);
+    }
+
+    pub fn completed_puzzles(
+        &self,
+    ) -> Iter<(PuzzleDay, PuzzlePart), Timestamp> {
+        self.completed.iter()
+    }
+}
+
+impl PartialEq for Member {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl Hash for Member {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
+}
+
+#[derive(Debug)]
+pub struct ResponseFormatError {
+    error: String,
+}
+
+impl ResponseFormatError {
+    fn new(error: String) -> Self {
+        Self { error }
+    }
+}
+
+impl Error for ResponseFormatError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
+    }
+}
+
+impl Display for ResponseFormatError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "Response format error: {}", self.error)
+    }
+}
+
+#[tokio::main]
+pub async fn fetch_members(
     year: i32,
     leaderboard_ids: &[String],
     session_cookie: &str,
-) -> reqwest::Result<String> {
-    // if !is_valid_event_year(year) {
-    //     return Err(...)
-    // }
+) -> Result<HashSet<Member>, Box<dyn Error>> {
+    let mut members = HashSet::new();
     for board_id in leaderboard_ids {
-        // TODO: parse and merge JSON results
-        fetch_leaderboard(year, board_id, session_cookie)?;
+        members.extend(
+            fetch_leaderboard_members(year, board_id, session_cookie)
+                .await?
+                .drain(),
+        );
     }
-    Ok("TODO".to_string())
+    Ok(members)
 }
 
-fn fetch_leaderboard(
+async fn fetch_leaderboard_members(
     year: i32,
     leaderboard_id: &str,
     session_cookie: &str,
-) -> reqwest::Result<String> {
+) -> Result<HashSet<Member>, Box<dyn Error>> {
     let mut headers = HeaderMap::new();
     // TODO: handle invalid characters in session cookie
     headers.insert(COOKIE, HeaderValue::from_str(session_cookie).unwrap());
 
+    // TODO: handle Client builder errors
     let client = Client::builder().default_headers(headers).build()?;
     let url = format!(
         "https://adventofcode.com/{}/leaderboard/private/view/{}.json",
@@ -51,5 +132,65 @@ fn fetch_leaderboard(
     );
 
     info!("Fetching {}", url);
-    client.get(&url).send()?.text()
+    let resp = client.get(&url).send().await?.json::<Value>().await?;
+
+    resp.get("members")
+        .and_then(|val| val.as_object())
+        .map(|obj| obj.values())
+        .ok_or_else(|| {
+            Box::new(ResponseFormatError::new(
+                "'members' field missing or not an object".to_string(),
+            ))
+        })?
+        .map(|value| {
+            Member::try_from(value)
+                .map_err(|err| Box::new(ResponseFormatError::new(err)) as _)
+        })
+        .collect::<Result<HashSet<_>, _>>()
+}
+
+impl TryFrom<&Value> for Member {
+    type Error = String;
+
+    fn try_from(value: &Value) -> Result<Self, Self::Error> {
+        let id = value
+            .get("id")
+            .and_then(|val| val.as_str())
+            .ok_or_else(|| "'id' missing or not a string".to_string())?
+            .parse::<i32>()
+            .map_err(|err| format!("invalid 'id': {}", err))?;
+        let name = value
+            .get("name")
+            .and_then(|val| val.as_str())
+            .map(|s| s.to_string());
+
+        let mut member = Member::new(id, name);
+
+        let completed = value
+            .get("completion_day_level")
+            .and_then(|v| v.as_object())
+            .ok_or_else(|| {
+                "'completion_day_level' missing or invalid".to_string()
+            })?;
+
+        for (day_str, parts_value) in completed.iter() {
+            let day = day_str.parse::<PuzzleDay>().unwrap();
+            let parts_obj = parts_value.as_object().unwrap();
+            for (part_str, parts_value) in parts_obj.iter() {
+                let part = part_str.parse::<PuzzlePart>().unwrap();
+                let timestamp = parts_value
+                    .as_object()
+                    .and_then(|obj| obj.get("get_star_ts"))
+                    .and_then(|val| val.as_str())
+                    .ok_or_else(|| {
+                        "'get_star_ts' missing or not a string".to_string()
+                    })?
+                    .parse::<Timestamp>()
+                    .map_err(|err| format!("invalid 'get_star_ts': {}", err))?;
+                member.add_star(day, part, timestamp);
+            }
+        }
+
+        Ok(member)
+    }
 }
