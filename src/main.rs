@@ -1,17 +1,14 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
-#[macro_use]
-extern crate rocket;
-#[macro_use]
-extern crate log;
-extern crate config;
-
 mod aoc;
 mod leaders;
 mod requests;
 
 use config::{Config, ConfigError, File};
 use leaders::EventManager;
+use log::{error, info};
+use rocket::routes;
+use rocket_contrib::templates::Template;
 use std::convert::TryInto;
 use std::process::exit;
 use std::sync::{Arc, RwLock};
@@ -20,11 +17,13 @@ fn build_event_manager() -> Result<EventManager, ConfigError> {
     let mut settings = Config::default();
 
     // Set default values
-    settings.set_default("leaderboard_update_sec", 5 * 60)?;
+    settings.set_default("leaderboard_update_sec", 15 * 60)?;
 
     // Load settings from file
     settings.merge(File::with_name("settings"))?;
 
+    // TODO: where to store this
+    let _leaderboard_name = settings.get_str("leaderboard_name")?;
     let leaderboard_update_sec = settings
         .get_int("leaderboard_update_sec")?
         .try_into()
@@ -62,5 +61,6 @@ fn main() {
     rocket::ignite()
         .manage(Arc::new(RwLock::new(event_manager)))
         .mount("/", routes![requests::index, requests::event_year])
+        .attach(Template::fairing())
         .launch();
 }

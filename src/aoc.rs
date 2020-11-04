@@ -1,4 +1,5 @@
 use chrono::{Datelike, FixedOffset, TimeZone, Utc};
+use log::info;
 use reqwest::header::{HeaderMap, HeaderValue, COOKIE};
 use reqwest::Client;
 use serde_json::Value;
@@ -29,17 +30,20 @@ pub fn is_valid_event_year(year: i32) -> bool {
 pub type MemberId = i32;
 pub type PuzzleDay = u8;
 pub type PuzzlePart = u8;
+pub type PuzzleId = (PuzzleDay, PuzzlePart);
 pub type Timestamp = i64;
+pub type CompletionLevel = u8;
 
-#[derive(Clone, Eq, Debug)]
+#[derive(Eq, Debug)]
 pub struct Member {
     id: MemberId,
-    name: Option<String>,
-    completed: HashMap<(PuzzleDay, PuzzlePart), Timestamp>,
+    name: String,
+    completed: HashMap<PuzzleId, Timestamp>,
 }
 
 impl Member {
-    fn new(id: MemberId, name: Option<String>) -> Self {
+    fn new(id: MemberId, opt_name: Option<String>) -> Self {
+        let name = opt_name.unwrap_or(format!("(anonymous user #{})", id));
         Self {
             id,
             name,
@@ -47,18 +51,19 @@ impl Member {
         }
     }
 
-    fn add_star(
-        &mut self,
-        day: PuzzleDay,
-        part: PuzzlePart,
-        timestamp: Timestamp,
-    ) {
-        self.completed.insert((day, part), timestamp);
+    pub fn get_id(&self) -> MemberId {
+        self.id
     }
 
-    pub fn completed_puzzles(
-        &self,
-    ) -> Iter<(PuzzleDay, PuzzlePart), Timestamp> {
+    pub fn get_name(&self) -> &String {
+        &self.name
+    }
+
+    fn add_star(&mut self, puzzle_id: PuzzleId, timestamp: Timestamp) {
+        self.completed.insert(puzzle_id, timestamp);
+    }
+
+    pub fn completed_puzzles(&self) -> Iter<PuzzleId, Timestamp> {
         self.completed.iter()
     }
 }
@@ -106,6 +111,7 @@ pub async fn fetch_members(
 ) -> Result<HashSet<Member>, Box<dyn Error>> {
     let mut members = HashSet::new();
     for board_id in leaderboard_ids {
+        // TODO: Fetch leaderboards concurrently
         members.extend(
             fetch_leaderboard_members(year, board_id, session_cookie)
                 .await?
@@ -173,21 +179,29 @@ impl TryFrom<&Value> for Member {
                 "'completion_day_level' missing or invalid".to_string()
             })?;
 
-        for (day_str, parts_value) in completed.iter() {
-            let day = day_str.parse::<PuzzleDay>().unwrap();
-            let parts_obj = parts_value.as_object().unwrap();
-            for (part_str, parts_value) in parts_obj.iter() {
-                let part = part_str.parse::<PuzzlePart>().unwrap();
-                let timestamp = parts_value
-                    .as_object()
-                    .and_then(|obj| obj.get("get_star_ts"))
-                    .and_then(|val| val.as_str())
-                    .ok_or_else(|| {
-                        "'get_star_ts' missing or not a string".to_string()
-                    })?
-                    .parse::<Timestamp>()
-                    .map_err(|err| format!("invalid 'get_star_ts': {}", err))?;
-                member.add_star(day, part, timestamp);
+        for (day_str, day_value) in completed.iter() {
+            let day = day_str.parse::<PuzzleDay>().map_err(|err| {
+                format!("invalid puzzle day {}: {}", day_str, err)
+            })?;
+            if let Some(parts_obj) = day_value.as_object() {
+                for (part_str, parts_value) in parts_obj.iter() {
+                    let part =
+                        part_str.parse::<PuzzlePart>().map_err(|err| {
+                            format!("invalid puzzle part {}: {}", part_str, err)
+                        })?;
+                    let timestamp = parts_value
+                        .as_object()
+                        .and_then(|obj| obj.get("get_star_ts"))
+                        .and_then(|val| val.as_str())
+                        .ok_or_else(|| {
+                            "'get_star_ts' missing or not a string".to_string()
+                        })?
+                        .parse::<Timestamp>()
+                        .map_err(|err| {
+                            format!("invalid 'get_star_ts': {}", err)
+                        })?;
+                    member.add_star((day, part), timestamp);
+                }
             }
         }
 

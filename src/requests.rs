@@ -1,17 +1,13 @@
 use crate::aoc::{is_valid_event_year, latest_event_year};
-use crate::leaders::{get_event, EventManager, EventYear};
+use crate::leaders::{get_leaderboard, EventManager, EventYear};
 use chrono::{DateTime, FixedOffset};
-use rocket::{http::RawStr, request::FromFormValue, State};
+use log::error;
+use rocket::{get, http::RawStr, http::Status, request::FromFormValue, State};
+use rocket_contrib::templates::Template;
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Copy)]
 pub struct AsOf(DateTime<FixedOffset>);
-
-impl AsOf {
-    pub fn timesamp(&self) -> i64 {
-        self.0.timestamp()
-    }
-}
 
 impl<'v> FromFormValue<'v> for AsOf {
     type Error = &'v RawStr;
@@ -27,7 +23,7 @@ impl<'v> FromFormValue<'v> for AsOf {
 pub fn index(
     event_mgr: State<Arc<RwLock<EventManager>>>,
     as_of: Option<AsOf>,
-) -> String {
+) -> Result<Template, Status> {
     render_leaderboard(event_mgr.clone(), latest_event_year(), as_of)
 }
 
@@ -36,11 +32,11 @@ pub fn event_year(
     event_mgr: State<Arc<RwLock<EventManager>>>,
     year: EventYear,
     as_of: Option<AsOf>,
-) -> Option<String> {
+) -> Result<Template, Status> {
     if is_valid_event_year(year) {
-        Some(render_leaderboard(event_mgr.clone(), year, as_of))
+        render_leaderboard(event_mgr.clone(), year, as_of)
     } else {
-        None
+        Err(Status::NotFound)
     }
 }
 
@@ -48,22 +44,12 @@ fn render_leaderboard(
     event_mgr: Arc<RwLock<EventManager>>,
     year: EventYear,
     as_of: Option<AsOf>,
-) -> String {
-    // TODO: use timestamp
-    let _timestamp = as_of.map(|a| a.timesamp());
-
-    match get_event(event_mgr, year) {
-        Ok(event) => {
-            let _scores = event.get_scores();
-            if let Some(AsOf(datetime)) = as_of {
-                format!("Year {}, as of {}:\n{:?}", year, datetime, event)
-            } else {
-                format!("Year {}, as of now:\n{:?}", year, event)
-            }
-        }
-        Err(err) => {
-            debug!("Failed to fetch leaders: {}", err);
-            format!("Something went wrong:\n{:?}", err)
-        }
-    }
+) -> Result<Template, Status> {
+    // TODO: check as_of is not in the future
+    get_leaderboard(event_mgr, year, as_of.map(|a| a.0))
+        .map(|leaderboard| Template::render("leaderboard", &leaderboard))
+        .map_err(|err| {
+            error!("Failed to fetch {} event: {}", year, err);
+            Status::InternalServerError
+        })
 }

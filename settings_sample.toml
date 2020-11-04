@@ -1,3 +1,6 @@
+# Name of leaderboard
+leaderboard_name = "me and my friends"
+
 # IDs of all Advent of Code leaderboards to be merged
 leaderboard_ids = [12345, 23456]
 
