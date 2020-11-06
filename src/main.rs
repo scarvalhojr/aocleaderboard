@@ -1,65 +1,46 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
 mod aoc;
+mod app;
 mod leaders;
 mod requests;
 
-use config::{Config, ConfigError, File};
+use app::AppSettings;
 use leaders::EventManager;
 use log::{error, info};
 use rocket::routes;
 use rocket_contrib::templates::Template;
-use std::convert::TryInto;
 use std::process::exit;
 use std::sync::{Arc, RwLock};
 
-fn build_event_manager() -> Result<EventManager, ConfigError> {
-    let mut settings = Config::default();
-
-    // Set default values
-    settings.set_default("leaderboard_update_sec", 15 * 60)?;
-
-    // Load settings from file
-    settings.merge(File::with_name("settings"))?;
-
-    // TODO: where to store this
-    let _leaderboard_name = settings.get_str("leaderboard_name")?;
-    let leaderboard_update_sec = settings
-        .get_int("leaderboard_update_sec")?
-        .try_into()
-        .map_err(|_| {
-            ConfigError::Message(
-                "leaderboard_update_sec must not be negative".to_string(),
-            )
-        })?;
-    let session_cookie = settings.get_str("session_cookie")?;
-    let leaderboard_ids = settings
-        .get_array("leaderboard_ids")?
-        .into_iter()
-        .map(|v| v.into_str())
-        .collect::<Result<Vec<_>, _>>()?;
-
-    info!("leaderboard_ids = {:?}", leaderboard_ids);
-    info!("leaderboard_update_sec = {}", leaderboard_update_sec);
-
-    Ok(EventManager::new(
-        leaderboard_ids,
-        session_cookie,
-        leaderboard_update_sec,
-    ))
-}
+const SETTINGS_FILE: &str = "settings";
 
 fn main() {
     env_logger::init();
 
     info!("Loading settings");
-    let event_manager = build_event_manager().unwrap_or_else(|err| {
-        error!("Failed to load settings: {}", err.to_string());
-        exit(1);
-    });
+    let settings =
+        AppSettings::load_from_file(SETTINGS_FILE).unwrap_or_else(|err| {
+            error!("Failed to load settings: {}", err.to_string());
+            exit(1);
+        });
+
+    info!("leaderboard_ids = {:?}", settings.leaderboard_ids);
+    info!(
+        "leaderboard_update_sec = {}",
+        settings.leaderboard_update_sec
+    );
+
+    // TODO: load session cookie from different file?
+    let event_mgr = EventManager::new(
+        settings.leaderboard_ids.clone(),
+        settings.session_cookie.clone(),
+        settings.leaderboard_update_sec,
+    );
 
     rocket::ignite()
-        .manage(Arc::new(RwLock::new(event_manager)))
+        .manage(Arc::new(settings))
+        .manage(Arc::new(RwLock::new(event_mgr)))
         .mount("/", routes![requests::index, requests::event_year])
         .attach(Template::fairing())
         .launch();

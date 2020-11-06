@@ -3,13 +3,24 @@ use log::info;
 use reqwest::header::{HeaderMap, HeaderValue, COOKIE};
 use reqwest::Client;
 use serde_json::Value;
+use std::cmp::Ordering;
 use std::collections::{hash_map::Iter, HashMap, HashSet};
 use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::hash::{Hash, Hasher};
 
-const FIRST_EVENT_YEAR: i32 = 2015;
+pub type EventYear = i32;
+pub type MemberId = i32;
+pub type PuzzleDay = u8;
+pub type PuzzlePart = u8;
+pub type PuzzleId = (PuzzleDay, PuzzlePart);
+pub type Timestamp = i64;
+pub type CompletionLevel = u8;
+pub type Score = usize;
+
+const NUM_PUZZLE_DAYS: PuzzleDay = 25;
+const FIRST_EVENT_YEAR: EventYear = 2015;
 const EVENT_START_MONTH: u32 = 12;
 const RELEASE_TIMEZONE_OFFSET: i32 = -5 * 3600;
 
@@ -26,13 +37,6 @@ pub fn latest_event_year() -> i32 {
 pub fn is_valid_event_year(year: i32) -> bool {
     year >= FIRST_EVENT_YEAR && year <= latest_event_year()
 }
-
-pub type MemberId = i32;
-pub type PuzzleDay = u8;
-pub type PuzzlePart = u8;
-pub type PuzzleId = (PuzzleDay, PuzzlePart);
-pub type Timestamp = i64;
-pub type CompletionLevel = u8;
 
 #[derive(Eq, Debug)]
 pub struct Member {
@@ -59,12 +63,34 @@ impl Member {
         &self.name
     }
 
+    pub fn get_stars(&self) -> Vec<CompletionLevel> {
+        let mut stars = vec![0; usize::from(NUM_PUZZLE_DAYS)];
+        for &(day, _) in self.completed.keys() {
+            if day > 0 && day <= NUM_PUZZLE_DAYS {
+                stars[usize::from(day - 1)] += 1;
+            }
+        }
+        stars
+    }
+
     fn add_star(&mut self, puzzle_id: PuzzleId, timestamp: Timestamp) {
         self.completed.insert(puzzle_id, timestamp);
     }
 
-    pub fn completed_puzzles(&self) -> Iter<PuzzleId, Timestamp> {
+    pub fn iter_completed(&self) -> Iter<PuzzleId, Timestamp> {
         self.completed.iter()
+    }
+}
+
+impl Ord for Member {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.id.cmp(&other.id)
+    }
+}
+
+impl PartialOrd for Member {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
