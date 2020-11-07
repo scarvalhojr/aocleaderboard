@@ -82,10 +82,8 @@ impl<'a> Context<'a> {
         let rank_str = (0..members.len())
             .map(|r| format!("{:width$}) ", r + 1, width = rank_width))
             .collect::<Vec<_>>();
-        let score_width = number_width(1 + members
-            .get(0)
-            .map(|member| member.get_score())
-            .unwrap_or(0)
+        let score_width = number_width(
+            1 + members.get(0).map(|member| member.get_score()).unwrap_or(0),
         );
         let score_str = members
             .iter()

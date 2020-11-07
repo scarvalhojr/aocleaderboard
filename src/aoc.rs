@@ -63,9 +63,11 @@ impl Member {
         &self.name
     }
 
-    pub fn get_stars(&self) -> Vec<CompletionLevel> {
+    pub fn get_stars(&self, as_of: Option<Timestamp>) -> Vec<CompletionLevel> {
         let mut stars = vec![0; usize::from(NUM_PUZZLE_DAYS)];
-        for &(day, _) in self.completed.keys() {
+        for (&(day, _), _) in self.completed.iter().filter(|&(_, ts)| {
+            as_of.map(|timestamp| *ts <= timestamp).unwrap_or(true)
+        }) {
             if day > 0 && day <= NUM_PUZZLE_DAYS {
                 stars[usize::from(day - 1)] += 1;
             }

@@ -64,18 +64,20 @@ impl Event {
         }
     }
 
-    fn build_leaderboard(&self) -> Leaderboard {
-        Leaderboard::new(self.updated_at, self.score_members())
+    fn build_leaderboard(&self, as_of: Option<Timestamp>) -> Leaderboard {
+        Leaderboard::new(self.updated_at, self.score_members(as_of))
     }
 
-    fn score_members(&self) -> Vec<ScoredMember> {
+    fn score_members(&self, as_of: Option<Timestamp>) -> Vec<ScoredMember> {
         let mut puzzles = HashMap::new();
         for member in self.members.iter() {
             for (puzzle_id, ts) in member.iter_completed() {
-                puzzles
-                    .entry(*puzzle_id)
-                    .or_insert_with(BinaryHeap::new)
-                    .push(Reverse((ts, member)));
+                if as_of.map(|timestamp| *ts <= timestamp).unwrap_or(true) {
+                    puzzles
+                        .entry(*puzzle_id)
+                        .or_insert_with(BinaryHeap::new)
+                        .push(Reverse((ts, member)));
+                }
             }
         }
 
@@ -92,7 +94,13 @@ impl Event {
         let mut scored_members = self
             .members
             .iter()
-            .map(|member| ScoredMember::new(member, *scores.get(member).unwrap_or(&0)))
+            .map(|member| {
+                ScoredMember::build(
+                    member,
+                    as_of,
+                    *scores.get(member).unwrap_or(&0),
+                )
+            })
             .collect::<Vec<_>>();
         scored_members.sort_unstable();
         scored_members.reverse();
@@ -109,11 +117,11 @@ pub struct ScoredMember {
 }
 
 impl ScoredMember {
-    fn new(member: &Member, score: Score) -> Self {
+    fn build(member: &Member, as_of: Option<Timestamp>, score: Score) -> Self {
         Self {
             id: member.get_id(),
             name: member.get_name().clone(),
-            stars: member.get_stars(),
+            stars: member.get_stars(as_of),
             score,
         }
     }
@@ -167,15 +175,14 @@ impl Leaderboard {
 pub fn get_leaderboard(
     event_mgr: Arc<RwLock<EventManager>>,
     year: EventYear,
-    _as_of: Option<Timestamp>,
+    as_of: Option<Timestamp>,
 ) -> Result<Leaderboard, Box<dyn Error>> {
     loop {
         // TODO: handle LockResult errors
         debug!("Attempting to read {} event", year);
-        // TODO: use as_of
         if let Some(event) = event_mgr.read().unwrap().get_event(year) {
             debug!("Building leaderboard for {} event", year);
-            return Ok(event.build_leaderboard());
+            return Ok(event.build_leaderboard(as_of));
         }
 
         // TODO: handle LockResult errors
