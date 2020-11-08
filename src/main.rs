@@ -7,7 +7,8 @@ mod routes;
 
 use app::AppSettings;
 use leaders::EventManager;
-use log::{error, info};
+use env_logger::Builder;
+use log::{error, info, LevelFilter};
 use rocket::routes;
 use rocket_contrib::templates::Template;
 use std::process::exit;
@@ -16,7 +17,10 @@ use std::sync::{Arc, RwLock};
 const SETTINGS_FILE: &str = "settings";
 
 fn main() {
-    env_logger::init();
+    // TODO: currently Rocket doesn't provide a nice a nice way to write
+    // app logs so we take over with env_logger - revisit this once issue
+    // https://github.com/SergioBenitez/Rocket/issues/21 is resolved
+    Builder::from_default_env().filter_level(LevelFilter::Info).init();
 
     let settings =
         AppSettings::load_from_file(SETTINGS_FILE).unwrap_or_else(|err| {
