@@ -221,14 +221,17 @@ pub fn get_leaderboard(
 ) -> Result<Leaderboard, Box<dyn Error>> {
     loop {
         // TODO: handle LockResult errors
-        debug!("Attempting to read {} event", year);
+        debug!("Attempting to acquire read lock on {} event", year);
         if let Some(event) = event_mgr.read().unwrap().get_event(year) {
             debug!("Building leaderboard for {} event", year);
             return Ok(event.build_leaderboard(leaderboard_order, as_of));
         }
 
         // TODO: handle LockResult errors
-        debug!("Attempting to update {} event", year);
+        debug!(
+            "{} event needs to be updated, attempting to acquire write lock",
+            year
+        );
         event_mgr.write().unwrap().update_event(year)?;
     }
 }

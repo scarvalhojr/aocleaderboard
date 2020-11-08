@@ -19,8 +19,8 @@ pub type Timestamp = i64;
 pub type CompletionLevel = u8;
 pub type Score = usize;
 
+pub const FIRST_EVENT_YEAR: EventYear = 2015;
 const NUM_PUZZLE_DAYS: PuzzleDay = 25;
-const FIRST_EVENT_YEAR: EventYear = 2015;
 const EVENT_START_MONTH: u32 = 12;
 const RELEASE_TIMEZONE_OFFSET: i32 = -5 * 3600;
 

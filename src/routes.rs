@@ -1,7 +1,5 @@
-use crate::aoc::{is_valid_event_year, latest_event_year, EventYear};
-use crate::leaders::{
-    get_leaderboard, EventManager, Leaderboard, LeaderboardOrder, ScoredMember,
-};
+use crate::aoc::*;
+use crate::leaders::*;
 use crate::AppSettings;
 use chrono::{DateTime, FixedOffset, Utc};
 use conv::ConvUtil;
@@ -35,7 +33,7 @@ impl<'v> FromFormValue<'v> for LeaderboardOrder {
 }
 
 #[get("/?<as_of>&<order>")]
-pub fn index(
+pub fn leaderboard(
     settings: State<Arc<AppSettings>>,
     event_mgr: State<Arc<RwLock<EventManager>>>,
     as_of: Option<AsOf>,
@@ -51,7 +49,7 @@ pub fn index(
 }
 
 #[get("/<year>?<as_of>&<order>")]
-pub fn event_year(
+pub fn leaderboard_year(
     settings: State<Arc<AppSettings>>,
     event_mgr: State<Arc<RwLock<EventManager>>>,
     year: EventYear,
@@ -61,12 +59,13 @@ pub fn event_year(
     if is_valid_event_year(year) {
         render_leaderboard(&settings, event_mgr.clone(), year, order, as_of)
     } else {
+        // TODO: customize 404 page
         Err(Status::NotFound)
     }
 }
 
 #[derive(Serialize)]
-struct Context<'a> {
+struct LeaderboardContext<'a> {
     year: EventYear,
     as_of_str: Option<String>,
     leaderboard_name: &'a str,
@@ -84,7 +83,7 @@ fn number_width(num: usize) -> usize {
     1 + num.value_as::<f64>().unwrap_or(0_f64).log10().floor() as usize
 }
 
-impl<'a> Context<'a> {
+impl<'a> LeaderboardContext<'a> {
     fn build(
         settings: &'a AppSettings,
         year: EventYear,
@@ -143,12 +142,47 @@ fn render_leaderboard(
         as_of.map(|AsOf(dt)| dt.timestamp()),
     )
     .map(|leaderboard| {
-        let context =
-            Context::build(&settings, year, as_of, leaderboard, order);
+        let context = LeaderboardContext::build(
+            &settings,
+            year,
+            as_of,
+            leaderboard,
+            order,
+        );
         Template::render("leaderboard", &context)
     })
     .map_err(|err| {
         error!("Failed to fetch {} event: {}", year, err);
+        // TODO: customize 500 page
         Status::InternalServerError
     })
+}
+
+#[derive(Serialize)]
+struct EventsContext {
+    year: EventYear,
+    events: Vec<EventYear>,
+}
+
+#[get("/events")]
+pub fn events() -> Template {
+    render_event(latest_event_year())
+}
+
+#[get("/<year>/events")]
+pub fn events_year(year: EventYear) -> Result<Template, Status> {
+    if is_valid_event_year(year) {
+        Ok(render_event(year))
+    } else {
+        // TODO: customize 404 page
+        Err(Status::NotFound)
+    }
+}
+
+fn render_event(year: EventYear) -> Template {
+    let events = (FIRST_EVENT_YEAR..=latest_event_year())
+        .rev()
+        .collect::<Vec<_>>();
+    let context = EventsContext { year, events };
+    Template::render("events", &context)
 }

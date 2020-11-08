@@ -3,7 +3,7 @@
 mod aoc;
 mod app;
 mod leaders;
-mod requests;
+mod routes;
 
 use app::AppSettings;
 use leaders::EventManager;
@@ -18,7 +18,6 @@ const SETTINGS_FILE: &str = "settings";
 fn main() {
     env_logger::init();
 
-    info!("Loading settings");
     let settings =
         AppSettings::load_from_file(SETTINGS_FILE).unwrap_or_else(|err| {
             error!("Failed to load settings: {}", err.to_string());
@@ -44,7 +43,15 @@ fn main() {
     rocket::ignite()
         .manage(Arc::new(settings))
         .manage(Arc::new(RwLock::new(event_mgr)))
-        .mount("/", routes![requests::index, requests::event_year])
+        .mount(
+            "/",
+            routes![
+                routes::leaderboard,
+                routes::leaderboard_year,
+                routes::events,
+                routes::events_year
+            ],
+        )
         .attach(Template::fairing())
         .launch();
 }
