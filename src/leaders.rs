@@ -1,8 +1,9 @@
 use crate::aoc::*;
 use log::debug;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::cmp::{Ordering, Reverse};
 use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::convert::TryFrom;
 use std::error::Error;
 use std::sync::{Arc, RwLock};
 use std::time::SystemTime;
@@ -56,6 +57,27 @@ struct Event {
     updated_at: SystemTime,
 }
 
+#[derive(Clone, Copy, Deserialize, Serialize)]
+pub enum LeaderboardOrder {
+    #[serde(rename = "local_score")]
+    LocalScore,
+
+    #[serde(rename = "stars")]
+    Stars,
+}
+
+impl TryFrom<&str> for LeaderboardOrder {
+    type Error = &'static str;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "local_score" => Ok(Self::LocalScore),
+            "stars" => Ok(Self::Stars),
+            _ => Err("Invalid leaderboard order"),
+        }
+    }
+}
+
 impl Event {
     fn new(members: HashSet<Member>, updated_at: SystemTime) -> Self {
         Self {
@@ -64,11 +86,21 @@ impl Event {
         }
     }
 
-    fn build_leaderboard(&self, as_of: Option<Timestamp>) -> Leaderboard {
-        Leaderboard::new(self.updated_at, self.score_members(as_of))
+    fn build_leaderboard(
+        &self,
+        order: LeaderboardOrder,
+        as_of: Option<Timestamp>,
+    ) -> Leaderboard {
+        let mut scored_members = match order {
+            LeaderboardOrder::LocalScore => self.local_score(as_of),
+            LeaderboardOrder::Stars => self.star_score(as_of),
+        };
+        scored_members.sort_unstable();
+        scored_members.reverse();
+        Leaderboard::new(self.updated_at, scored_members)
     }
 
-    fn score_members(&self, as_of: Option<Timestamp>) -> Vec<ScoredMember> {
+    fn local_score(&self, as_of: Option<Timestamp>) -> Vec<ScoredMember> {
         let mut puzzles = HashMap::new();
         for member in self.members.iter() {
             for (puzzle_id, ts) in member.iter_completed() {
@@ -91,8 +123,7 @@ impl Event {
             }
         }
 
-        let mut scored_members = self
-            .members
+        self.members
             .iter()
             .map(|member| {
                 ScoredMember::build(
@@ -101,10 +132,16 @@ impl Event {
                     *scores.get(member).unwrap_or(&0),
                 )
             })
-            .collect::<Vec<_>>();
-        scored_members.sort_unstable();
-        scored_members.reverse();
-        scored_members
+            .collect::<Vec<_>>()
+    }
+
+    fn star_score(&self, as_of: Option<Timestamp>) -> Vec<ScoredMember> {
+        self.members
+            .iter()
+            .map(|member| {
+                ScoredMember::build(member, as_of, member.star_count(as_of))
+            })
+            .collect::<Vec<_>>()
     }
 }
 
@@ -113,6 +150,7 @@ pub struct ScoredMember {
     id: MemberId,
     name: String,
     stars: Vec<CompletionLevel>,
+    last_star: Timestamp,
     score: Score,
 }
 
@@ -122,6 +160,7 @@ impl ScoredMember {
             id: member.get_id(),
             name: member.get_name().clone(),
             stars: member.get_stars(as_of),
+            last_star: member.get_last_star(as_of),
             score,
         }
     }
@@ -133,7 +172,9 @@ impl ScoredMember {
 
 impl Ord for ScoredMember {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.score.cmp(&other.score)
+        self.score
+            .cmp(&other.score)
+            .then(other.last_star.cmp(&self.last_star))
     }
 }
 
@@ -175,6 +216,7 @@ impl Leaderboard {
 pub fn get_leaderboard(
     event_mgr: Arc<RwLock<EventManager>>,
     year: EventYear,
+    leaderboard_order: LeaderboardOrder,
     as_of: Option<Timestamp>,
 ) -> Result<Leaderboard, Box<dyn Error>> {
     loop {
@@ -182,7 +224,7 @@ pub fn get_leaderboard(
         debug!("Attempting to read {} event", year);
         if let Some(event) = event_mgr.read().unwrap().get_event(year) {
             debug!("Building leaderboard for {} event", year);
-            return Ok(event.build_leaderboard(as_of));
+            return Ok(event.build_leaderboard(leaderboard_order, as_of));
         }
 
         // TODO: handle LockResult errors

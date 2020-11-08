@@ -27,11 +27,14 @@ fn main() {
 
     info!("leaderboard_ids = {:?}", settings.leaderboard_ids);
     info!(
+        "leaderboard_default_order = {}",
+        serde_json::to_string(&settings.leaderboard_default_order).unwrap()
+    );
+    info!(
         "leaderboard_update_sec = {}",
         settings.leaderboard_update_sec
     );
 
-    // TODO: load session cookie from different file?
     let event_mgr = EventManager::new(
         settings.leaderboard_ids.clone(),
         settings.session_cookie.clone(),

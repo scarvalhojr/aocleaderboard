@@ -1,11 +1,15 @@
-# Name of leaderboard
+# Leaderboard name
 leaderboard_name = "me and my friends"
 
 # IDs of all Advent of Code leaderboards to be merged
 leaderboard_ids = [12345, 23456]
 
+# Default leaderboard order: "local_score" (default) or "stars"
+# leaderboard_default_order = "stars"
+
 # Session cookie for adventofcode.com (with access to all leaderboards)
 session_cookie = "session=xxxx..."
 
-# Optionally change how often to fetch leaderboards data from adventofcode.com
-# leaderboard_update_sec = 300
+# How often to fetch leaderboards from adventofcode.com, in seconds
+# (default: 900)
+# leaderboard_update_sec = 1200

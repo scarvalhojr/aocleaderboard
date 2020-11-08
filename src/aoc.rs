@@ -75,6 +75,26 @@ impl Member {
         stars
     }
 
+    pub fn get_last_star(&self, as_of: Option<Timestamp>) -> Timestamp {
+        self.completed
+            .iter()
+            .map(|(_, ts)| *ts)
+            .filter(|&ts| {
+                as_of.map(|timestamp| ts <= timestamp).unwrap_or(true)
+            })
+            .max()
+            .unwrap_or(0)
+    }
+
+    pub fn star_count(&self, as_of: Option<Timestamp>) -> Score {
+        self.completed
+            .iter()
+            .filter(|&(_, ts)| {
+                as_of.map(|timestamp| *ts <= timestamp).unwrap_or(true)
+            })
+            .count()
+    }
+
     fn add_star(&mut self, puzzle_id: PuzzleId, timestamp: Timestamp) {
         self.completed.insert(puzzle_id, timestamp);
     }
