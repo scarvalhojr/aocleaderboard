@@ -20,7 +20,7 @@ fn main() {
     // TODO: currently Rocket doesn't provide a nice a nice way to write
     // app logs so we take over with env_logger - revisit this once issue
     // https://github.com/SergioBenitez/Rocket/issues/21 is resolved
-    Builder::from_default_env().filter_level(LevelFilter::Info).init();
+    Builder::new().filter_level(LevelFilter::Info).parse_default_env().init();
 
     let settings =
         AppSettings::load_from_file(SETTINGS_FILE).unwrap_or_else(|err| {
