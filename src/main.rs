@@ -6,8 +6,8 @@ mod leaders;
 mod routes;
 
 use app::AppSettings;
-use leaders::EventManager;
 use env_logger::Builder;
+use leaders::EventManager;
 use log::{error, info, LevelFilter};
 use rocket::routes;
 use rocket_contrib::templates::Template;
@@ -20,7 +20,10 @@ fn main() {
     // TODO: currently Rocket doesn't provide a nice a nice way to write
     // app logs so we take over with env_logger - revisit this once issue
     // https://github.com/SergioBenitez/Rocket/issues/21 is resolved
-    Builder::new().filter_level(LevelFilter::Info).parse_default_env().init();
+    Builder::new()
+        .filter_level(LevelFilter::Info)
+        .parse_default_env()
+        .init();
 
     let settings =
         AppSettings::load_from_file(SETTINGS_FILE).unwrap_or_else(|err| {

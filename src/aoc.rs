@@ -1,7 +1,9 @@
 use chrono::{Datelike, FixedOffset, TimeZone, Utc};
+use futures::future::join_all;
 use log::info;
 use reqwest::header::{HeaderMap, HeaderValue, COOKIE};
-use reqwest::Client;
+use reqwest::redirect::Policy;
+use reqwest::{Client, RequestBuilder};
 use serde_json::Value;
 use std::cmp::Ordering;
 use std::collections::{hash_map::Iter, HashMap, HashSet};
@@ -157,38 +159,42 @@ pub async fn fetch_members(
     leaderboard_ids: &[String],
     session_cookie: &str,
 ) -> Result<HashSet<Member>, Box<dyn Error>> {
-    let mut members = HashSet::new();
-    for board_id in leaderboard_ids {
-        // TODO: Fetch leaderboards concurrently
-        members.extend(
-            fetch_leaderboard_members(year, board_id, session_cookie)
-                .await?
-                .drain(),
+    let mut headers = HeaderMap::new();
+    headers.insert(COOKIE, HeaderValue::from_str(&session_cookie)?);
+
+    let client = Client::builder()
+        .default_headers(headers)
+        .redirect(Policy::none())
+        .build()?;
+
+    let responses = join_all(leaderboard_ids.iter().map(|leaderboard_id| {
+        let url = format!(
+            "https://adventofcode.com/{}/leaderboard/private/view/{}.json",
+            year, leaderboard_id
         );
+        info!("Fetching {}", url);
+        fetch_leaderboard(client.get(&url))
+    }))
+    .await;
+
+    let mut all_members = HashSet::new();
+    for resp in responses {
+        let mut members = resp?;
+        all_members.extend(members.drain())
     }
-    Ok(members)
+
+    Ok(all_members)
 }
 
-async fn fetch_leaderboard_members(
-    year: i32,
-    leaderboard_id: &str,
-    session_cookie: &str,
+async fn fetch_leaderboard(
+    request: RequestBuilder,
 ) -> Result<HashSet<Member>, Box<dyn Error>> {
-    let mut headers = HeaderMap::new();
-    // TODO: handle invalid characters in session cookie
-    headers.insert(COOKIE, HeaderValue::from_str(session_cookie).unwrap());
-
-    // TODO: handle Client builder errors
-    let client = Client::builder().default_headers(headers).build()?;
-    let url = format!(
-        "https://adventofcode.com/{}/leaderboard/private/view/{}.json",
-        year, leaderboard_id
-    );
-
-    info!("Fetching {}", url);
-    let resp = client.get(&url).send().await?.json::<Value>().await?;
-
-    resp.get("members")
+    request
+        .send()
+        .await?
+        .json::<Value>()
+        .await?
+        .get("members")
         .and_then(|val| val.as_object())
         .map(|obj| obj.values())
         .ok_or_else(|| {
