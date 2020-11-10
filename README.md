@@ -9,12 +9,81 @@ adventofcode.com API URL.
 
 ## Requirements
 
-This app uses [Rocket](https://rocket.rs) web framework and, therefore, requires
-a _nightly_ version of Rust.
+This app is built with [Rocket](https://rocket.rs) web framework and, therefore,
+requires a _nightly_ version of Rust.
 
-## Setup
+## Install
 
-TODO
+- Install a recent version of Rust using [rustup](https://rustup.rs/) or update
+it with:
+```
+# rustup update
+```
+
+- Install the nightly toolchain:
+```
+# rustup toolchain install nightly
+```
+
+- Clone this repo:
+```
+# git clone https://github.com/scarvalhojr/aocleaderboard.git
+```
+
+- Set the repo directory to use the nightly toolchain:
+```
+# cd aocleaderboard
+# rustup override set nightly
+```
+
+- Build:
+```
+# cargo build --release
+```
+
+## Configure
+
+- Make a copy of [settings_sample.toml](settings_sample.toml) called
+  `settings.toml`:
+
+```
+# cp settings_sample.toml settings.toml
+```
+
+- Edit the new `settings.toml` file and provide a list of private leaderboard
+  IDs along with a leaderboard name and a session cookie from adventofcode.com
+  with access to the leaderboards.
+
+```
+leaderboard_name = "me and my friends"
+leaderboard_ids = [12345, 23456]
+session_cookie = "session=<session cookie string>"
+```
+
+To obtain the session cookie, login to [adventofcode.com](adventofcode.com)
+and inspect the cookie stored in your browser. You must be a member of the
+leaderboards in order to fetch their data - check your leaderboards at
+[https://adventofcode.com/leaderboard/private](https://adventofcode.com/leaderboard/private).
+
+- Optionally make a copy of [Rocket_sample.toml](Rocket_sample.toml) called
+  `Rocket.toml` and change any Rocket-specific settings, for instance the IP
+   address and binding port.
+
+## Run
+
+Start the app from a directory containing the configuration files:
+
+```
+# cargo run --release
+```
+
+Cargo normally installs binaries in a directory in your executable path. If
+your shell can't find the `aocleaderboard` executable, you may need to call it
+using its full path, e.g. `~/.cargo/bin/aocleaderboard`.
+
+## Use
+
+Point your favourite browser to [http://localhost:8000](http://localhost:8000).
 
 ## Features
 
@@ -22,8 +91,12 @@ TODO
    memory and fetched again after a configurable time limit (by default, 15
    minutes).
 - Leaderboards can be ordered by local score (based on the time each star was
-  acquired) or by number of stars. Tie breaks are broken by the time the most
-  recent star was acquired.
+  acquired) or by number of stars. Ties are broken by the time the most recent
+  star was acquired.
+
+## Contribute
+
+Feedback and pull requests are welcome.
 
 ## Support Advent of Code
 
