@@ -1,6 +1,6 @@
 [package]
 name = "aocleaderboard"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
 authors = ["Sergio de Carvalho <scarvalhojr@gmail.com>"]
 description = "Merge multiple Advent of Code leaderboards"
