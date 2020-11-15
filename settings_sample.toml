@@ -13,3 +13,7 @@ session_cookie = "session=xxxx..."
 # How often to fetch leaderboards from adventofcode.com, in seconds
 # (default: 900)
 # leaderboard_update_sec = 1200
+
+# Override the latest event year, which by default is the current year or the
+# previous year if current date is before Dec 1st (when first puzzle unlocks)
+# latest_event_year = 2020

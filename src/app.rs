@@ -1,3 +1,4 @@
+use crate::aoc::EventYear;
 use crate::leaders::LeaderboardOrder;
 use config::{Config, ConfigError, File};
 use std::convert::TryInto;
@@ -8,6 +9,7 @@ pub struct AppSettings {
     pub leaderboard_default_order: LeaderboardOrder,
     pub leaderboard_update_sec: u64,
     pub session_cookie: String,
+    pub latest_event_year: Option<EventYear>,
 }
 
 impl AppSettings {
@@ -47,6 +49,24 @@ impl AppSettings {
                     "leaderboard_update_sec must not be negative".to_string(),
                 )
             })?;
+        let latest_event_year =
+            settings.get_int("latest_event_year").map_or_else(
+                |err| match err {
+                    ConfigError::NotFound(_) => Ok(None),
+                    _ => Err(err),
+                },
+                |value| {
+                    value
+                        .try_into()
+                        .map_err(|err| {
+                            ConfigError::Message(format!(
+                                "invalid latest_event_year: {}",
+                                err
+                            ))
+                        })
+                        .map(Some)
+                },
+            )?;
 
         // TODO: add support to filter users out
 
@@ -56,6 +76,7 @@ impl AppSettings {
             leaderboard_default_order,
             leaderboard_update_sec,
             session_cookie,
+            latest_event_year,
         })
     }
 }

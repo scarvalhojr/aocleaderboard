@@ -40,6 +40,9 @@ fn main() {
         "leaderboard_update_sec = {}",
         settings.leaderboard_update_sec
     );
+    if let Some(year) = settings.latest_event_year {
+        info!("latest_event_year = {}", year);
+    };
 
     let event_mgr = EventManager::new(
         settings.leaderboard_ids.clone(),

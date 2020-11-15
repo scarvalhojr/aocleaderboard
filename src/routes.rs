@@ -39,13 +39,8 @@ pub fn leaderboard(
     as_of: Option<AsOf>,
     order: Option<LeaderboardOrder>,
 ) -> Result<Template, Status> {
-    render_leaderboard(
-        &settings,
-        event_mgr.clone(),
-        latest_event_year(),
-        order,
-        as_of,
-    )
+    let year = settings.latest_event_year.unwrap_or_else(latest_event_year);
+    render_leaderboard(&settings, event_mgr.clone(), year, order, as_of)
 }
 
 #[get("/<year>?<as_of>&<order>")]
@@ -56,7 +51,7 @@ pub fn leaderboard_year(
     as_of: Option<AsOf>,
     order: Option<LeaderboardOrder>,
 ) -> Result<Template, Status> {
-    if is_valid_event_year(year) {
+    if Some(year) == settings.latest_event_year || is_valid_event_year(year) {
         render_leaderboard(&settings, event_mgr.clone(), year, order, as_of)
     } else {
         // TODO: customize 404 page
@@ -165,24 +160,30 @@ struct EventsContext {
 }
 
 #[get("/events")]
-pub fn events() -> Template {
-    render_event(latest_event_year())
+pub fn events(settings: State<Arc<AppSettings>>) -> Template {
+    let year = settings.latest_event_year.unwrap_or_else(latest_event_year);
+    render_event(&settings, year)
 }
 
 #[get("/<year>/events")]
-pub fn events_year(year: EventYear) -> Result<Template, Status> {
-    if is_valid_event_year(year) {
-        Ok(render_event(year))
+pub fn events_year(
+    settings: State<Arc<AppSettings>>,
+    year: EventYear,
+) -> Result<Template, Status> {
+    if Some(year) == settings.latest_event_year || is_valid_event_year(year) {
+        Ok(render_event(&settings, year))
     } else {
         // TODO: customize 404 page
         Err(Status::NotFound)
     }
 }
 
-fn render_event(year: EventYear) -> Template {
-    let events = (FIRST_EVENT_YEAR..=latest_event_year())
-        .rev()
-        .collect::<Vec<_>>();
+fn render_event(settings: &AppSettings, year: EventYear) -> Template {
+    let latest_year = match settings.latest_event_year {
+        Some(y) => y.max(latest_event_year()),
+        _ => latest_event_year(),
+    };
+    let events = (FIRST_EVENT_YEAR..=latest_year).rev().collect::<Vec<_>>();
     let context = EventsContext { year, events };
     Template::render("events", &context)
 }

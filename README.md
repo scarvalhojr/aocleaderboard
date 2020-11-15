@@ -67,7 +67,15 @@ and inspect the cookie stored in your browser. You must be a member of the
 leaderboards in order to fetch their data - check your leaderboards at
 [https://adventofcode.com/leaderboard/private](https://adventofcode.com/leaderboard/private).
 
-### Optionals
+### Other settings
+
+- In `settings.toml`:
+  - `leaderboard_default_order` - default leaderboard ordering.
+  - `leaderboard_update_sec` - how often to fetch leaderboards from
+     adventofcode.com, in seconds.
+  - `latest_event_year` - override the latest event year, which by default is
+     the current year or the previous year if current date is before Dec 1st
+     (when first puzzle unlocks).
 
 - To change any Rocket-specific settings, e.g. path to TLS certs an keys, or
   IP address and binding port, make a copy of

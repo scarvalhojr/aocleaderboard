@@ -2,10 +2,6 @@
 {% block contents %}
 <p>From here, you can access the leaderboard of previous events:</p>
 {% for event in events -%}
-  {%- if loop.first -%}
-    <div><a href="/">[{{ event }}]</a></div>
-  {%- else -%}
-    <div><a href="/{{ event }}">[{{ event }}]</a></div>
-  {%- endif %}
+  <div><a href="/{{ event }}">[{{ event }}]</a></div>
 {% endfor -%}
 {%- endblock contents -%}

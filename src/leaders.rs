@@ -44,6 +44,7 @@ impl EventManager {
 
         debug!("Updating {} event", year);
         let updated_at = SystemTime::now();
+        // TODO: handle 404 response for invalid leaderboard ID or year
         let members =
             fetch_members(year, &self.leaderboard_ids, &self.session_cookie)?;
 
@@ -175,6 +176,7 @@ impl Ord for ScoredMember {
         self.score
             .cmp(&other.score)
             .then(other.last_star.cmp(&self.last_star))
+            .then(other.id.cmp(&self.id))
     }
 }
 
