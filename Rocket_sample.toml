@@ -2,6 +2,11 @@
 # builds and the production environment for non-debug builds. The environment
 # can be changed via the ROCKET_ENV environment variable.
 
+# TLS configuration for all environments (optional)
+# [global.tls]
+# certs = "/path/to/certs.pem"
+# key = "/path/to/key.pem"
+
 [development]
 address = "localhost"
 port = 8000
@@ -16,3 +21,4 @@ port = 8000
 address = "0.0.0.0"
 port = 8000
 # workers = 16
+

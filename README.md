@@ -43,6 +43,8 @@ it with:
 
 ## Configure
 
+### Required configuration
+
 - Make a copy of [settings_sample.toml](settings_sample.toml) called
   `settings.toml`:
 
@@ -65,21 +67,19 @@ and inspect the cookie stored in your browser. You must be a member of the
 leaderboards in order to fetch their data - check your leaderboards at
 [https://adventofcode.com/leaderboard/private](https://adventofcode.com/leaderboard/private).
 
-- Optionally make a copy of [Rocket_sample.toml](Rocket_sample.toml) called
-  `Rocket.toml` and change any Rocket-specific settings, for instance the IP
-   address and binding port.
+### Optionals
+
+- To change any Rocket-specific settings, e.g. path to TLS certs an keys, or
+  IP address and binding port, make a copy of
+  [Rocket_sample.toml](Rocket_sample.toml) called `Rocket.toml`.
 
 ## Run
 
-Start the app from a directory containing the configuration files:
+Start the app:
 
 ```
 # cargo run --release
 ```
-
-Cargo normally installs binaries in a directory in your executable path. If
-your shell can't find the `aocleaderboard` executable, you may need to call it
-using its full path, e.g. `~/.cargo/bin/aocleaderboard`.
 
 ## Use
 
