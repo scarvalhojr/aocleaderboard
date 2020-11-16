@@ -40,6 +40,7 @@ fn main() {
         "leaderboard_update_sec = {}",
         settings.leaderboard_update_sec
     );
+    info!("exclude_members = {:?}", settings.exclude_members);
     if let Some(year) = settings.latest_event_year {
         info!("latest_event_year = {}", year);
     };
@@ -48,6 +49,7 @@ fn main() {
         settings.leaderboard_ids.clone(),
         settings.session_cookie.clone(),
         settings.leaderboard_update_sec,
+        settings.exclude_members.iter().cloned().collect(),
     );
 
     rocket::ignite()

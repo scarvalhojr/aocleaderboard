@@ -12,6 +12,7 @@ pub struct EventManager {
     leaderboard_ids: Vec<String>,
     session_cookie: String,
     update_sec: u64,
+    exclude_members: HashSet<MemberId>,
     events: HashMap<EventYear, Event>,
 }
 
@@ -20,12 +21,14 @@ impl EventManager {
         leaderboard_ids: Vec<String>,
         session_cookie: String,
         update_sec: u64,
+        exclude_members: HashSet<MemberId>,
     ) -> Self {
         Self {
             leaderboard_ids,
             session_cookie,
             update_sec,
             events: HashMap::new(),
+            exclude_members,
         }
     }
 
@@ -45,8 +48,12 @@ impl EventManager {
         debug!("Updating {} event", year);
         let updated_at = SystemTime::now();
         // TODO: handle 404 response for invalid leaderboard ID or year
-        let members =
-            fetch_members(year, &self.leaderboard_ids, &self.session_cookie)?;
+        let members = fetch_members(
+            year,
+            &self.leaderboard_ids,
+            &self.exclude_members,
+            &self.session_cookie,
+        )?;
 
         self.events.insert(year, Event::new(members, updated_at));
         Ok(())

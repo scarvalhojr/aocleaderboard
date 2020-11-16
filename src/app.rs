@@ -1,6 +1,6 @@
-use crate::aoc::EventYear;
+use crate::aoc::{EventYear, MemberId};
 use crate::leaders::LeaderboardOrder;
-use config::{Config, ConfigError, File};
+use config::{Config, ConfigError, File, Value};
 use std::convert::TryInto;
 
 pub struct AppSettings {
@@ -8,6 +8,7 @@ pub struct AppSettings {
     pub leaderboard_ids: Vec<String>,
     pub leaderboard_default_order: LeaderboardOrder,
     pub leaderboard_update_sec: u64,
+    pub exclude_members: Vec<MemberId>,
     pub session_cookie: String,
     pub latest_event_year: Option<EventYear>,
 }
@@ -19,6 +20,7 @@ impl AppSettings {
         // Set default values
         settings.set_default("leaderboard_update_sec", 15 * 60)?;
         settings.set_default("leaderboard_default_order", "local_score")?;
+        settings.set_default("exclude_members", Vec::<Value>::new())?;
 
         // Load settings from file
         settings.merge(File::with_name(filename))?;
@@ -34,7 +36,7 @@ impl AppSettings {
         // TODO: load session cookie from different file?
         let session_cookie = settings.get_str("session_cookie")?;
 
-        // Optional overrides
+        // Optional settings
         let leaderboard_default_order =
             settings.get("leaderboard_default_order").map_err(|_| {
                 ConfigError::Message(
@@ -49,6 +51,11 @@ impl AppSettings {
                     "leaderboard_update_sec must not be negative".to_string(),
                 )
             })?;
+        let exclude_members = settings
+            .get_array("exclude_members")?
+            .into_iter()
+            .map(|v| v.try_into())
+            .collect::<Result<Vec<_>, _>>()?;
         let latest_event_year =
             settings.get_int("latest_event_year").map_or_else(
                 |err| match err {
@@ -75,6 +82,7 @@ impl AppSettings {
             leaderboard_ids,
             leaderboard_default_order,
             leaderboard_update_sec,
+            exclude_members,
             session_cookie,
             latest_event_year,
         })

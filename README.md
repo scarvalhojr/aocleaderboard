@@ -76,6 +76,7 @@ leaderboards in order to fetch their data - check your leaderboards at
   - `latest_event_year` - override the latest event year, which by default is
      the current year or the previous year if current date is before Dec 1st
      (when first puzzle unlocks).
+  - `exclude_members` - a list of member IDs to exclude from leaderboard.
 
 - To change any Rocket-specific settings, e.g. path to TLS certs an keys, or
   IP address and binding port, make a copy of

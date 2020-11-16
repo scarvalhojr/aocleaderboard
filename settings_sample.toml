@@ -14,6 +14,9 @@ session_cookie = "session=xxxx..."
 # (default: 900)
 # leaderboard_update_sec = 1200
 
+# List of member IDs to exclude from leaderboard
+# exclude_members = [12345, 23456]
+
 # Override the latest event year, which by default is the current year or the
 # previous year if current date is before Dec 1st (when first puzzle unlocks)
 # latest_event_year = 2020

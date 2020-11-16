@@ -157,6 +157,7 @@ impl Display for ResponseFormatError {
 pub async fn fetch_members(
     year: i32,
     leaderboard_ids: &[String],
+    exclude_members: &HashSet<MemberId>,
     session_cookie: &str,
 ) -> Result<HashSet<Member>, Box<dyn Error>> {
     let mut headers = HeaderMap::new();
@@ -180,7 +181,9 @@ pub async fn fetch_members(
     let mut all_members = HashSet::new();
     for resp in responses {
         let mut members = resp?;
-        all_members.extend(members.drain())
+        all_members.extend(
+            members.drain().filter(|m| !exclude_members.contains(&m.id)),
+        )
     }
 
     Ok(all_members)
