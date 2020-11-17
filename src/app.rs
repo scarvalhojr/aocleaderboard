@@ -75,8 +75,6 @@ impl AppSettings {
                 },
             )?;
 
-        // TODO: add support to filter users out
-
         Ok(Self {
             leaderboard_name,
             leaderboard_ids,
