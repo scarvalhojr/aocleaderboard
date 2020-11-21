@@ -1,4 +1,4 @@
-use chrono::{Datelike, FixedOffset, TimeZone, Utc};
+use chrono::{Datelike, FixedOffset, NaiveDate, TimeZone, Utc};
 use futures::future::join_all;
 use log::info;
 use reqwest::header::{HeaderMap, HeaderValue, COOKIE};
@@ -23,6 +23,7 @@ pub type Score = usize;
 
 pub const FIRST_EVENT_YEAR: EventYear = 2015;
 const NUM_PUZZLE_DAYS: PuzzleDay = 25;
+const EVENT_START_DAY: u32 = 1;
 const EVENT_START_MONTH: u32 = 12;
 const RELEASE_TIMEZONE_OFFSET: i32 = -5 * 3600;
 
@@ -34,6 +35,25 @@ pub fn latest_event_year() -> i32 {
     } else {
         now.year()
     }
+}
+
+pub fn last_unlock_day(year: i32) -> i64 {
+    let timezone: FixedOffset = FixedOffset::east(RELEASE_TIMEZONE_OFFSET);
+    if let Some(event_start) = timezone
+        .from_local_datetime(
+            &NaiveDate::from_ymd(year, EVENT_START_MONTH, EVENT_START_DAY)
+                .and_hms(0, 0, 0),
+        )
+        .single()
+    {
+        let duration = timezone
+            .from_utc_datetime(&Utc::now().naive_utc())
+            .signed_duration_since(event_start);
+        if duration.num_milliseconds() >= 0 {
+            return (1 + duration.num_days()).min(NUM_PUZZLE_DAYS.into());
+        }
+    }
+    0
 }
 
 pub fn is_valid_event_year(year: i32) -> bool {

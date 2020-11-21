@@ -72,6 +72,7 @@ struct LeaderboardContext<'a> {
     rank_str: Vec<String>,
     score_str: Vec<String>,
     table_head_pad: String,
+    last_unlock_day: i64,
 }
 
 fn number_width(num: usize) -> usize {
@@ -105,6 +106,7 @@ impl<'a> LeaderboardContext<'a> {
             .collect::<Vec<_>>();
         let table_head_pad =
             vec![' '; rank_width + score_width].into_iter().collect();
+        let last_unlock_day = last_unlock_day(year);
 
         Self {
             year,
@@ -118,6 +120,7 @@ impl<'a> LeaderboardContext<'a> {
             rank_str,
             score_str,
             table_head_pad,
+            last_unlock_day,
         }
     }
 }

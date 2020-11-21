@@ -24,13 +24,25 @@ You can use a different <a href="javascript:void(0)" onclick="ordering_show()">[
 
 <div class="privboard-row">&nbsp;&nbsp;&nbsp{% if leaderboard_order == "stars" %}&nbsp;&nbsp;{% endif %}{{ table_head_pad }}<span class="privboard-days">
   {%- for n in range(start=1, end=10) -%}
-    <a href="https://adventofcode.com/{{ year }}/day/{{ n }}" target="_blank">{{ n }}</a>
+    {%- if n <= last_unlock_day -%}
+      <a href="https://adventofcode.com/{{ year }}/day/{{ n }}" target="_blank">{{ n }}</a>
+    {%- else -%}
+      <span class="privboard-star-unlocked">{{ n }}</span>
+    {%- endif -%}
   {%- endfor -%}
   {%- for n in range(end=10) -%}
-    <a href="https://adventofcode.com/{{ year }}/day/1{{ n }}" target="_blank">1<br/>{{ n }}</a>
+    {%- if n + 10 <= last_unlock_day -%}
+      <a href="https://adventofcode.com/{{ year }}/day/1{{ n }}" target="_blank">1<br/>{{ n }}</a>
+    {%- else -%}
+      <span class="privboard-star-unlocked">1</br>{{ n }}</span>
+    {%- endif -%}
   {%- endfor -%}
   {%- for n in range(end=6) -%}
-    <a href="https://adventofcode.com/{{ year }}/day/2{{ n }}" target="_blank">2<br/>{{ n }}</a>
+    {%- if n + 20 <= last_unlock_day -%}
+      <a href="https://adventofcode.com/{{ year }}/day/2{{ n }}" target="_blank">2<br/>{{ n }}</a>
+    {%- else -%}
+      <span class="privboard-star-unlocked">2</br>{{ n }}</span>
+    {%- endif -%}
   {%- endfor -%}
 </span></div>
 {%- for member in members -%}
@@ -41,7 +53,11 @@ You can use a different <a href="javascript:void(0)" onclick="ordering_show()">[
     {{ score_str[loop.index0] }}&nbsp;
   {%- endif -%}
   {%- for stars in member.stars -%}
-    <span class="privboard-star-{% if stars == 2 %}both{% elif stars == 1 %}firstonly{% else %}unlocked{% endif %}">*</span>
+    {%- if loop.index <= last_unlock_day -%}
+      <span class="privboard-star-{% if stars == 2 %}both{% elif stars == 1 %}firstonly{% else %}unlocked{% endif %}">*</span>
+    {%- else -%}
+      &nbsp;
+    {%- endif -%}
   {%- endfor %}  <span class="privboard-name">{{ member.name }}</span></div>
 {% endfor %}
 {% endblock contents %}
