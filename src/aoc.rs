@@ -207,7 +207,12 @@ pub async fn fetch_members(
         )
     }
 
+    let star_count: usize = all_members
+        .iter()
+        .map(|member| member.completed.len())
+        .sum();
     info!("{} unique members found", all_members.len());
+    info!("{} stars collected in {} event", star_count, year);
     Ok(all_members)
 }
 
