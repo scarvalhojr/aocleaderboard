@@ -201,11 +201,13 @@ pub async fn fetch_members(
     let mut all_members = HashSet::new();
     for resp in responses {
         let mut members = resp?;
+        info!("Fetched {} members", members.len());
         all_members.extend(
             members.drain().filter(|m| !exclude_members.contains(&m.id)),
         )
     }
 
+    info!("{} unique members found", all_members.len());
     Ok(all_members)
 }
 
