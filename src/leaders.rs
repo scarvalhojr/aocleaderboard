@@ -173,6 +173,18 @@ impl ScoredMember {
         }
     }
 
+    pub fn get_id(&self) -> MemberId {
+        self.id
+    }
+
+    pub fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    pub fn get_last_star(&self) -> Timestamp {
+        self.last_star
+    }
+
     pub fn get_score(&self) -> Score {
         self.score
     }

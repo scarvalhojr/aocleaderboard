@@ -25,9 +25,10 @@
   <h1 class="title-event">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="title-event-wrap"></span><a href="https://adventofcode.com/{{ year }}" target="_blank">{{ year }}</a></a><span class="title-event-wrap"></span></h1>
   <nav>
     <ul>
+      <li><a href="/overall">[Overall]</a></li>
+      <li><a href="https://adventofcode.com/{{ year }}/stats" target="_blank">[Stats]</a></li>
       <li><a href="https://adventofcode.com/{{ year }}/support" target="_blank">[AoC++]</a></li>
       <li><a href="https://adventofcode.com/{{ year }}/sponsors" target="_blank">[Sponsors]</a></li>
-      <li><a href="https://adventofcode.com/{{ year }}/stats" target="_blank">[Stats]</a></li>
     </ul>
   </nav>
 </div>

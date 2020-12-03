@@ -3,7 +3,9 @@
 mod aoc;
 mod app;
 mod leaders;
+mod overall;
 mod routes;
+mod util;
 
 use app::AppSettings;
 use env_logger::Builder;
@@ -61,7 +63,8 @@ fn main() {
                 routes::leaderboard,
                 routes::leaderboard_year,
                 routes::events,
-                routes::events_year
+                routes::events_year,
+                routes::overall,
             ],
         )
         .attach(Template::fairing())

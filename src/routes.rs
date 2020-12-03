@@ -1,8 +1,9 @@
 use crate::aoc::*;
 use crate::leaders::*;
+use crate::overall::*;
+use crate::util::*;
 use crate::AppSettings;
 use chrono::{DateTime, FixedOffset, Utc};
-use conv::ConvUtil;
 use log::error;
 use rocket::{get, http::RawStr, http::Status, request::FromFormValue, State};
 use rocket_contrib::templates::Template;
@@ -73,10 +74,6 @@ struct LeaderboardContext<'a> {
     score_str: Vec<String>,
     table_head_pad: String,
     last_unlock_day: i64,
-}
-
-fn number_width(num: usize) -> usize {
-    1 + num.value_as::<f64>().unwrap_or(0_f64).log10().floor() as usize
 }
 
 impl<'a> LeaderboardContext<'a> {
@@ -189,4 +186,13 @@ fn render_event(settings: &AppSettings, year: EventYear) -> Template {
     let events = (FIRST_EVENT_YEAR..=latest_year).rev().collect::<Vec<_>>();
     let context = EventsContext { year, events };
     Template::render("events", &context)
+}
+
+#[get("/overall?<order>")]
+pub fn overall(
+    settings: State<Arc<AppSettings>>,
+    event_mgr: State<Arc<RwLock<EventManager>>>,
+    order: Option<LeaderboardOrder>,
+) -> Result<Template, Status> {
+    render_overall(&settings, event_mgr.clone(), order)
 }
