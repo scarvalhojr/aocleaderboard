@@ -2,6 +2,8 @@
 
 mod aoc;
 mod app;
+mod events;
+mod leaderboard;
 mod leaders;
 mod overall;
 mod routes;
