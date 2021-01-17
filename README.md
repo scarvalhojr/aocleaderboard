@@ -1,11 +1,28 @@
 # aocleaderboard
 
 [Advent of Code](https://adventofcode.com) private leaderboards are currently
-limited to 200 users. This simple web app can merge users from multiple
+limited to 200 users. This web app can merge users from multiple
 leaderboards, recalculate their scores based on the total number of members, and
 present them in a single page with the same look and feel of the original
-Advent of Code website. Leaderboards are fetched in JSON format from the
-adventofcode.com API URL.
+Advent of Code website. It can also show an overall leaderboard with scores
+for all years combined.
+
+Leaderboards are fetched in JSON format from the
+[adventofcode.com](https://adventofcode.com) API URL.
+
+## Screenshots
+
+Leaderboard with local score:
+
+![alt text](local_score.png "Local score")
+
+Leaderboard with star count:
+
+![alt text](stars.png "Local score")
+
+Overall leaderboard:
+
+![alt text](overall.png "Local score")
 
 ## Requirements
 
@@ -70,12 +87,13 @@ leaderboards in order to fetch their data - check your leaderboards at
 ### Other settings
 
 - In `settings.toml`:
-  - `leaderboard_default_order` - default leaderboard ordering.
+  - `leaderboard_default_order` - default leaderboard ordering, either
+    `"local_score"` (default) or `"stars"`.
   - `leaderboard_update_sec` - how often to fetch leaderboards from
-     adventofcode.com, in seconds.
+    adventofcode.com, in seconds.
   - `latest_event_year` - override the latest event year, which by default is
-     the current year or the previous year if current date is before Dec 1st
-     (when first puzzle unlocks).
+    the current year or the previous year if the current date is before Dec 1st
+    (when first puzzle unlocks).
   - `exclude_members` - a list of member IDs to exclude from leaderboard.
 
 - To change any Rocket-specific settings, e.g. path to TLS certs an keys, or
@@ -102,6 +120,7 @@ Point your favourite browser to [http://localhost:8000](http://localhost:8000).
 - Leaderboards can be ordered by local score (based on the time each star was
   acquired) or by number of stars. Ties are broken by the time the most recent
   star was acquired.
+- Overall leaderboard combines scores from all years.
 
 ## Contribute
 

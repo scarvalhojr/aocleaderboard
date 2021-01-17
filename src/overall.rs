@@ -57,8 +57,10 @@ fn build_overall_leaderboard(
         }
     }
 
-    let mut members =
-        member_map.into_iter().map(|(_, member)| member).collect::<Vec<_>>();
+    let mut members = member_map
+        .into_iter()
+        .map(|(_, member)| member)
+        .collect::<Vec<_>>();
     members.sort_unstable();
     members.reverse();
 
