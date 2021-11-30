@@ -276,13 +276,12 @@ impl TryFrom<&Value> for Member {
                     let timestamp = parts_value
                         .as_object()
                         .and_then(|obj| obj.get("get_star_ts"))
-                        .and_then(|val| val.as_str())
                         .ok_or_else(|| {
-                            "'get_star_ts' missing or not a string".to_string()
+                            format!("'get_star_ts' missing for member {}, day {}", id, day)
                         })?
-                        .parse::<Timestamp>()
-                        .map_err(|err| {
-                            format!("invalid 'get_star_ts': {}", err)
+                        .as_i64()
+                        .ok_or_else(|| {
+                            format!("invalid 'get_star_ts' for member {}, day {}", id, day)
                         })?;
                     member.add_star((day, part), timestamp);
                 }
