@@ -30,7 +30,7 @@ pub fn render_overall(
                 // TODO: customize 500 page
                 Status::InternalServerError
             })?;
-    let context = Context::build(&settings, to_year, leaderboard, order);
+    let context = Context::build(settings, to_year, leaderboard, order);
     Ok(Template::render("overall", &context))
 }
 

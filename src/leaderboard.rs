@@ -51,7 +51,7 @@ pub fn render_leaderboard(
         // TODO: customize 500 page
         Status::InternalServerError
     })?;
-    let context = Context::build(&settings, year, as_of, leaderboard, order);
+    let context = Context::build(settings, year, as_of, leaderboard, order);
     Ok(Template::render("leaderboard", &context))
 }
 
