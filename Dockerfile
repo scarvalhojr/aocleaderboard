@@ -9,6 +9,3 @@ CMD cargo build --release
 
 RUN chmod +x ./target/release/aocleaderboard
 ENTRYPOINT [ "target/release/aocleaderboard" ]
-
-
-
