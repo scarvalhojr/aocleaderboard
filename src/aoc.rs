@@ -181,7 +181,7 @@ pub async fn fetch_members(
     session_cookie: &str,
 ) -> Result<HashSet<Member>, Box<dyn Error>> {
     let mut headers = HeaderMap::new();
-    headers.insert(COOKIE, HeaderValue::from_str(&session_cookie)?);
+    headers.insert(COOKIE, HeaderValue::from_str(session_cookie)?);
 
     let client = Client::builder()
         .default_headers(headers)
@@ -277,11 +277,17 @@ impl TryFrom<&Value> for Member {
                         .as_object()
                         .and_then(|obj| obj.get("get_star_ts"))
                         .ok_or_else(|| {
-                            format!("'get_star_ts' missing for member {}, day {}", id, day)
+                            format!(
+                                "'get_star_ts' missing for member {}, day {}",
+                                id, day
+                            )
                         })?
                         .as_i64()
                         .ok_or_else(|| {
-                            format!("invalid 'get_star_ts' for member {}, day {}", id, day)
+                            format!(
+                                "invalid 'get_star_ts' for member {}, day {}",
+                                id, day
+                            )
                         })?;
                     member.add_star((day, part), timestamp);
                 }

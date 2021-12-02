@@ -17,7 +17,7 @@
     <ul>
       <li><a href="https://adventofcode.com/{{ year }}/about" target="_blank">[About]</a></li>
       <li><a href="/{{ year }}/events">[Events]</a></li>
-      <li><a href="https://teespring.com/adventofcode-2019" target="_blank">[Shop]</a></li>
+      <li><a href="https://teespring.com/stores/advent-of-code" target="_blank">[Shop]</a></li>
     </ul>
   </nav>
 </div>
