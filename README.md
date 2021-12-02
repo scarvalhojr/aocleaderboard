@@ -108,6 +108,13 @@ Start the app:
 # cargo run --release
 ```
 
+If you are using Docker Compose:
+```
+docker-compose up
+# Or, for detached
+docker-compose up -d
+```
+
 ## Use
 
 Point your favourite browser to [http://localhost:8000](http://localhost:8000).
