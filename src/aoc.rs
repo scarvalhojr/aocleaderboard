@@ -28,7 +28,8 @@ const EVENT_START_MONTH: u32 = 12;
 const RELEASE_TIMEZONE_OFFSET: i32 = -5 * 3600;
 
 pub fn latest_event_year() -> i32 {
-    let now = FixedOffset::east(RELEASE_TIMEZONE_OFFSET)
+    let now = FixedOffset::east_opt(RELEASE_TIMEZONE_OFFSET)
+        .unwrap()
         .from_utc_datetime(&Utc::now().naive_utc());
     if now.month() < EVENT_START_MONTH {
         now.year() - 1
@@ -38,12 +39,16 @@ pub fn latest_event_year() -> i32 {
 }
 
 pub fn last_unlock_day(year: i32) -> i64 {
-    let timezone: FixedOffset = FixedOffset::east(RELEASE_TIMEZONE_OFFSET);
+    let timezone: FixedOffset =
+        FixedOffset::east_opt(RELEASE_TIMEZONE_OFFSET).unwrap();
+    let Some(puzzle_date) = NaiveDate::from_ymd_opt(
+        year, EVENT_START_MONTH, EVENT_START_DAY
+    ) else {
+        return 0;
+    };
+
     if let Some(event_start) = timezone
-        .from_local_datetime(
-            &NaiveDate::from_ymd(year, EVENT_START_MONTH, EVENT_START_DAY)
-                .and_hms(0, 0, 0),
-        )
+        .from_local_datetime(&puzzle_date.and_hms_opt(0, 0, 0).unwrap())
         .single()
     {
         let duration = timezone

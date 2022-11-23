@@ -14,15 +14,15 @@ Leaderboards are fetched in JSON format from the
 
 Leaderboard with local score:
 
-![alt text](local_score.png "Local score")
+![alt text](https://github.com/scarvalhojr/aocleaderboard/blob/main/local_score.png "Local score")
 
 Leaderboard with star count:
 
-![alt text](stars.png "Local score")
+![alt text](https://github.com/scarvalhojr/aocleaderboard/blob/main/stars.png "Local score")
 
 Overall leaderboard:
 
-![alt text](overall.png "Local score")
+![alt text](https://github.com/scarvalhojr/aocleaderboard/blob/main/overall.png "Local score")
 
 ## Requirements
 
@@ -30,6 +30,16 @@ This app is built with [Rocket](https://rocket.rs) web framework and, therefore,
 requires a _nightly_ version of Rust.
 
 ## Install
+
+- On Linux, install the appropriate development tools for your system, for
+instance:
+```
+# On Fedora, RHEL, CentOS
+# sudo dnf groupinstall "Development Tools"
+
+# On Debian, Ubuntu
+# sudo apt install build-essential
+```
 
 - Install a recent version of Rust using [rustup](https://rustup.rs/) or update
 it with:
