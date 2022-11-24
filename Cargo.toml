@@ -1,6 +1,6 @@
 [package]
 name = "aocleaderboard"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2021"
 authors = ["Sergio de Carvalho <scarvalhojr@gmail.com>"]
 description = "Merge multiple Advent of Code leaderboards"
@@ -14,11 +14,11 @@ categories = ["visualization"]
 chrono = "0.4"
 config = "0.11"
 conv = "0.3"
-env_logger = "0.9"
-futures = "0.3.18"
+env_logger = "0.10"
+futures = "0.3"
 log = "0.4"
 reqwest = { version = "0.10", features = ["json"] }
-rocket = { version = "0.4.10", features = ["tls"] }
+rocket = { version = "0.4.11", features = ["tls"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "0.2", features = ["macros"] }
