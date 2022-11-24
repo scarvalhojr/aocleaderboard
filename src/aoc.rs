@@ -13,7 +13,7 @@ use std::fmt::{self, Display, Formatter};
 use std::hash::{Hash, Hasher};
 
 pub type EventYear = i32;
-pub type MemberId = i32;
+pub type MemberId = i64;
 pub type PuzzleDay = u8;
 pub type PuzzlePart = u8;
 pub type PuzzleId = (PuzzleDay, PuzzlePart);
@@ -104,8 +104,8 @@ impl Member {
 
     pub fn get_last_star(&self, as_of: Option<Timestamp>) -> Timestamp {
         self.completed
-            .iter()
-            .map(|(_, ts)| *ts)
+            .values()
+            .copied()
             .filter(|&ts| {
                 as_of.map(|timestamp| ts <= timestamp).unwrap_or(true)
             })
@@ -250,10 +250,9 @@ impl TryFrom<&Value> for Member {
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         let id = value
             .get("id")
-            .and_then(|val| val.as_str())
-            .ok_or_else(|| "'id' missing or not a string".to_string())?
-            .parse::<i32>()
-            .map_err(|err| format!("invalid 'id': {}", err))?;
+            .ok_or_else(|| "missing 'id'".to_string())?
+            .as_i64()
+            .ok_or_else(|| "invalid 'id'".to_string())?;
         let name = value
             .get("name")
             .and_then(|val| val.as_str())

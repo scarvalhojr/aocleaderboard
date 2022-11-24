@@ -31,7 +31,7 @@ pub fn render_overall(
                 Status::InternalServerError
             })?;
     let context = Context::build(settings, to_year, leaderboard, order);
-    Ok(Template::render("overall", &context))
+    Ok(Template::render("overall", context))
 }
 
 fn build_overall_leaderboard(
@@ -57,10 +57,7 @@ fn build_overall_leaderboard(
         }
     }
 
-    let mut members = member_map
-        .into_iter()
-        .map(|(_, member)| member)
-        .collect::<Vec<_>>();
+    let mut members = member_map.into_values().collect::<Vec<_>>();
     members.sort_unstable();
     members.reverse();
 
