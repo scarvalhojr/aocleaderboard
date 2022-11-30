@@ -112,17 +112,29 @@ leaderboards in order to fetch their data - check your leaderboards at
 
 ## Run
 
+### Running on bare metal
 Start the app:
+```console
+cargo run --release
+```
 
-```
-# cargo run --release
+### Docker
+Build the Docker image:
+```console
+docker build . -t aocleaderboard
 ```
 
-If you are using Docker Compose:
+Start the image:
+```console
+docker run -p 8000:8000 -v "$(pwd)/settings.toml:/app/settings.toml" aocleaderboard
 ```
-docker-compose up
+This will mount the `settings.toml` file into the container. 
+
+### Docker Compose
+```console
+docker compose up
 # Or, for detached
-docker-compose up -d
+docker compose up -d
 ```
 
 ## Use
