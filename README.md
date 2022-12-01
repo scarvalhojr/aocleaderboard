@@ -14,15 +14,15 @@ Leaderboards are fetched in JSON format from the
 
 Leaderboard with local score:
 
-![alt text](https://github.com/scarvalhojr/aocleaderboard/blob/main/local_score.png "Local score")
+![alt text](https://github.com/scarvalhojr/aocleaderboard/blob/main/local_score.png)
 
 Leaderboard with star count:
 
-![alt text](https://github.com/scarvalhojr/aocleaderboard/blob/main/stars.png "Local score")
+![alt text](https://github.com/scarvalhojr/aocleaderboard/blob/main/stars.png)
 
 Overall leaderboard:
 
-![alt text](https://github.com/scarvalhojr/aocleaderboard/blob/main/overall.png "Local score")
+![alt text](https://github.com/scarvalhojr/aocleaderboard/blob/main/overall.png)
 
 ## Requirements
 

@@ -1,7 +1,7 @@
 use chrono::{Datelike, FixedOffset, NaiveDate, TimeZone, Utc};
 use futures::future::join_all;
 use log::info;
-use reqwest::header::{HeaderMap, HeaderValue, COOKIE};
+use reqwest::header::{HeaderMap, HeaderValue, COOKIE, USER_AGENT};
 use reqwest::redirect::Policy;
 use reqwest::{Client, RequestBuilder};
 use serde_json::Value;
@@ -26,6 +26,9 @@ const NUM_PUZZLE_DAYS: PuzzleDay = 25;
 const EVENT_START_DAY: u32 = 1;
 const EVENT_START_MONTH: u32 = 12;
 const RELEASE_TIMEZONE_OFFSET: i32 = -5 * 3600;
+
+const PKG_REPO: &str = env!("CARGO_PKG_REPOSITORY");
+const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub fn latest_event_year() -> i32 {
     let now = FixedOffset::east_opt(RELEASE_TIMEZONE_OFFSET)
@@ -187,6 +190,10 @@ pub async fn fetch_members(
 ) -> Result<HashSet<Member>, Box<dyn Error>> {
     let mut headers = HeaderMap::new();
     headers.insert(COOKIE, HeaderValue::from_str(session_cookie)?);
+
+    let user_agent = format!("{PKG_REPO} {PKG_VERSION}");
+    let user_agent_header = HeaderValue::from_str(&user_agent).unwrap();
+    headers.insert(USER_AGENT, user_agent_header);
 
     let client = Client::builder()
         .default_headers(headers)
